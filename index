@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WallEnc</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root {
+  /* Apple-inspired palette */
+  --bg:        #f5f5f7;
+  --surface:   #ffffff;
+  --surface2:  #f5f5f7;
+  --surface3:  #e8e8ed;
+  --border:    rgba(0,0,0,0.08);
+  --border2:   rgba(0,0,0,0.12);
+
+  --text:      #1d1d1f;
+  --text2:     #424245;
+  --text3:     #86868b;
+  --text4:     #aeaeb2;
+
+  --blue:      #0071e3;
+  --blue-l:    #2997ff;
+  --blue-d:    #0051a2;
+  --blue-bg:   rgba(0,113,227,0.08);
+  --blue-bg2:  rgba(0,113,227,0.14);
+
+  --green:     #34c759;
+  --green-bg:  rgba(52,199,89,0.1);
+  --amber:     #ff9500;
+  --amber-bg:  rgba(255,149,0,0.1);
+  --red:       #ff3b30;
+  --red-bg:    rgba(255,59,48,0.1);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+
+  --r-sm: 8px;
+  --r:    12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text4); }
+
+/* ═══════════════════════════════════
+   LOGIN — Apple-style centered card
+═══════════════════════════════════ */
+#screen-login {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+
+/* subtle mesh background */
+#screen-login::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0,113,227,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(0,113,227,0.04) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.login-wrap {
+  width: 100%; max-width: 380px;
+  animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.login-brand {
+  display: flex; flex-direction: column; align-items: center;
+  margin-bottom: 32px; gap: 12px;
+}
+
+.login-icon {
+  width: 56px; height: 56px;
+  background: var(--blue);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px rgba(0,113,227,0.3);
+}
+
+.login-icon svg { width: 28px; height: 28px; fill: white; }
+
+.login-brand-name {
+  font-size: 22px; font-weight: 600;
+  color: var(--text); letter-spacing: -0.03em;
+}
+
+.login-brand-name span { color: var(--blue); }
+
+.login-card {
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+}
+
+.login-title {
+  font-size: 17px; font-weight: 600;
+  color: var(--text); margin-bottom: 4px; letter-spacing: -0.02em;
+}
+
+.login-sub {
+  font-size: 13px; color: var(--text3);
+  margin-bottom: 24px; font-weight: 400;
+}
+
+.form-field { margin-bottom: 12px; }
+
+.form-label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--text2); margin-bottom: 6px; letter-spacing: .01em;
+}
+
+.form-input-wrap { position: relative; }
+
+.form-input {
+  width: 100%; height: 42px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  padding: 0 40px 0 14px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none;
+}
+
+.form-input::placeholder { color: var(--text4); }
+
+.form-input:focus {
+  border-color: var(--blue);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.12);
+}
+
+.input-icon {
+  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+  color: var(--text4); pointer-events: none;
+}
+
+.input-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.eye-toggle {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); padding: 2px; transition: color .15s;
+}
+.eye-toggle:hover { color: var(--text2); }
+.eye-toggle svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+
+.login-error {
+  display: none;
+  background: var(--red-bg);
+  border: 1px solid rgba(255,59,48,0.2);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-size: 12.5px; color: var(--red);
+  margin-bottom: 14px;
+}
+.login-error.show { display: block; animation: shake .3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+.btn-primary {
+  width: 100%; height: 44px;
+  background: var(--blue);
+  color: white; border: none;
+  border-radius: var(--r-sm);
+  font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600;
+  cursor: pointer; letter-spacing: -.01em;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(0,113,227,0.25);
+  margin-top: 6px;
+}
+.btn-primary:hover { background: var(--blue-l); box-shadow: 0 4px 16px rgba(0,113,227,0.35); }
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { opacity: .6; pointer-events: none; }
+
+.btn-primary .spinner {
+  display: inline-block; width: 15px; height: 15px;
+  border: 2px solid rgba(255,255,255,.3); border-top-color: white;
+  border-radius: 50%; animation: spin .6s linear infinite;
+  vertical-align: middle; margin-right: 7px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-footer {
+  margin-top: 20px; text-align: center;
+  font-size: 12px; color: var(--text4);
+}
+
+/* ═══════════════════════════════════
+   APP SHELL
+═══════════════════════════════════ */
+#screen-app { display: none; min-height: 100vh; }
+
+/* SIDEBAR NAV — Apple sidebar style */
+.app-layout {
+  display: flex; min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px; min-width: 240px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-brand {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+
+.sidebar-icon {
+  width: 32px; height: 32px;
+  background: var(--blue);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-icon svg { width: 18px; height: 18px; fill: white; }
+
+.sidebar-brand-name {
+  font-size: 16px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.03em;
+}
+
+.sidebar-brand-name span { color: var(--blue); }
+
+.sidebar-user {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+}
+
+.user-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--blue-d));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; color: white;
+  flex-shrink: 0;
+}
+
+.user-info { flex: 1; min-width: 0; }
+.user-display { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-client { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+
+/* NAV */
+.sidebar-nav { padding: 12px 10px; flex: 1; overflow-y: auto; }
+
+.nav-section { margin-bottom: 20px; }
+
+.nav-section-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text4); text-transform: uppercase;
+  letter-spacing: .08em; padding: 0 8px; margin-bottom: 4px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background .12s;
+  color: var(--text2); font-size: 13.5px; font-weight: 500;
+  border: none; background: none; width: 100%; text-align: left;
+}
+
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+
+.nav-item.active {
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+
+.nav-item svg {
+  width: 17px; height: 17px; flex-shrink: 0;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+  opacity: .8;
+}
+
+.nav-item.active svg { opacity: 1; }
+
+.nav-badge {
+  margin-left: auto;
+  min-width: 18px; height: 18px;
+  background: var(--red);
+  color: white; font-size: 10px; font-weight: 600;
+  border-radius: 99px; padding: 0 5px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.nav-badge.blue { background: var(--blue); }
+
+/* SIDEBAR FOOTER */
+.sidebar-footer {
+  padding: 12px 10px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Firebase config in sidebar */
+.fb-config { padding: 10px 8px; }
+
+.fb-config-label {
+  font-size: 10px; font-weight: 600; color: var(--text4);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 8px;
+}
+
+.fb-input {
+  width: 100%; height: 34px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  padding: 0 10px; outline: none; margin-bottom: 6px;
+  transition: border-color .15s;
+}
+
+.fb-input:focus { border-color: var(--blue); }
+
+.btn-connect {
+  width: 100%; height: 32px;
+  background: var(--blue);
+  color: white; border: none; border-radius: var(--r-sm);
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+
+.btn-connect:hover { background: var(--blue-l); }
+
+.conn-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text3); margin-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.conn-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text4); flex-shrink: 0;
+}
+
+.conn-dot.live { background: var(--green); box-shadow: 0 0 0 2px rgba(52,199,89,.2); animation: livepulse 2s ease infinite; }
+.conn-dot.err  { background: var(--red); }
+@keyframes livepulse { 0%,100%{box-shadow:0 0 0 2px rgba(52,199,89,.2);} 50%{box-shadow:0 0 0 4px rgba(52,199,89,.1);} }
+
+.btn-logout {
+  width: 100%; height: 34px;
+  background: none; border: 1.5px solid var(--border2);
+  border-radius: var(--r-sm); color: var(--text3);
+  font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; transition: all .15s; margin-top: 6px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+.btn-logout:hover { background: var(--red-bg); border-color: rgba(255,59,48,.3); color: var(--red); }
+.btn-logout svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* MAIN CONTENT */
+.main {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+/* TOP BAR */
+.topbar {
+  height: 52px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 24px; gap: 16px;
+  position: sticky; top: 0; z-index: 50;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  font-size: 15px; font-weight: 600;
+  color: var(--text); letter-spacing: -0.02em;
+  flex: 1;
+}
+
+.topbar-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--text3);
+}
+
+.topbar-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 500;
+  padding: 4px 10px; border-radius: 99px;
+  border: 1px solid;
+}
+
+.topbar-pill.live { color: var(--green); background: var(--green-bg); border-color: rgba(52,199,89,.3); }
+.topbar-pill.err  { color: var(--red);   background: var(--red-bg);   border-color: rgba(255,59,48,.3); }
+.topbar-pill.idle { color: var(--text3); background: var(--surface2); border-color: var(--border2); }
+
+/* VIEWS */
+.view { display: none; flex: 1; overflow-y: auto; }
+.view.active { display: flex; flex-direction: column; }
+
+/* ═══════════════════════════════════
+   OVERVIEW VIEW
+═══════════════════════════════════ */
+#view-overview { padding: 24px; gap: 20px; }
+
+/* Stat cards */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s, transform .2s;
+}
+
+.stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+
+.stat-card-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+}
+
+.stat-card-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.stat-card-icon.blue  { background: var(--blue-bg);  color: var(--blue); }
+.stat-card-icon.green { background: var(--green-bg); color: var(--green); }
+.stat-card-icon.amber { background: var(--amber-bg); color: var(--amber); }
+.stat-card-icon.red   { background: var(--red-bg);   color: var(--red); }
+
+.stat-card-label { font-size: 12px; color: var(--text3); font-weight: 500; margin-bottom: 4px; }
+
+.stat-card-value {
+  font-size: 28px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.04em;
+  line-height: 1; font-family: 'Inter', sans-serif;
+}
+
+.stat-card-note { font-size: 11px; color: var(--text4); margin-top: 4px; }
+
+/* Beacon cards grid */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title { font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: .01em; }
+
+.beacon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.beacon-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s, transform .2s, border-color .2s;
+  cursor: default;
+}
+
+.beacon-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.beacon-card.flash { animation: bflash .4s ease; }
+@keyframes bflash { 0%{background:#eff6ff;} 100%{background:var(--surface);} }
+
+.bc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.bc-left { display: flex; align-items: center; gap: 12px; }
+
+.bc-avatar {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+}
+
+.bc-avatar.online { background: var(--green-bg); color: var(--green); }
+.bc-avatar.stale  { background: var(--amber-bg); color: var(--amber); }
+.bc-avatar.offline{ background: var(--surface2); color: var(--text4); }
+
+.bc-tag { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; color: var(--text); }
+.bc-anchor { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.status-dot.online { background: var(--green); box-shadow: 0 0 0 3px rgba(52,199,89,.15); }
+.status-dot.stale  { background: var(--amber); }
+.status-dot.offline{ background: var(--text4); }
+
+/* Signal bar */
+.bc-signal { margin-bottom: 12px; }
+
+.bc-signal-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.bc-signal-label { font-size: 11px; color: var(--text3); font-weight: 500; }
+.bc-signal-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; }
+
+.signal-track {
+  height: 4px; background: var(--surface3); border-radius: 99px; overflow: hidden;
+}
+
+.signal-fill { height: 100%; border-radius: 99px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+
+/* Metrics */
+.bc-metrics {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bc-metric {
+  background: var(--surface2);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+}
+
+.bc-metric-label { font-size: 10px; color: var(--text4); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+.bc-metric-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); }
+
+/* Alert flags */
+.bc-flags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.flag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 99px; border: 1px solid;
+}
+
+.flag-clear  { color: var(--text4); background: var(--surface2); border-color: var(--border2); }
+.flag-motion { color: var(--amber); background: var(--amber-bg); border-color: rgba(255,149,0,.3); animation: flagpulse 1.2s ease infinite; }
+.flag-tamper { color: var(--red);   background: var(--red-bg);   border-color: rgba(255,59,48,.3);  animation: flagpulse 1.2s ease infinite; }
+@keyframes flagpulse { 0%,100%{opacity:1;} 50%{opacity:.6;} }
+
+.bc-footer {
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.bc-mac { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text4); }
+.bc-ts  { font-size: 11px; color: var(--text4); }
+
+/* Event log */
+.log-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.log-card-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.log-card-title { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: .01em; }
+
+.btn-ghost {
+  background: none; border: none; cursor: pointer;
+  font-size: 12px; color: var(--text3); padding: 3px 8px;
+  border-radius: var(--r-sm); transition: background .12s, color .12s;
+  font-family: 'Inter', sans-serif; font-weight: 500;
+}
+
+.btn-ghost:hover { background: var(--surface2); color: var(--text2); }
+
+#log-entries {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--text3); padding: 12px 16px;
+  max-height: 180px; overflow-y: auto;
+  display: flex; flex-direction: column-reverse; gap: 2px;
+}
+
+.log-line { padding: 1.5px 0; }
+.log-line.ok   { color: var(--green); }
+.log-line.err  { color: var(--red); }
+.log-line.info { color: var(--blue); }
+
+.empty-state {
+  grid-column: 1/-1;
+  padding: 48px 24px; text-align: center;
+  color: var(--text3);
+}
+
+.empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .4; }
+.empty-title { font-size: 15px; font-weight: 600; color: var(--text3); margin-bottom: 4px; }
+.empty-sub { font-size: 13px; color: var(--text4); }
+
+/* ═══════════════════════════════════
+   MAP VIEW
+═══════════════════════════════════ */
+#view-map {
+  padding: 0;
+  overflow: hidden;
+}
+
+.map-shell {
+  display: flex;
+  height: calc(100vh - 52px);
+}
+
+/* Map sidebar */
+.map-side {
+  width: 260px; min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.map-side-section {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.map-side-section-title {
+  font-size: 10px; font-weight: 600; color: var(--text4);
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px;
+}
+
+.fp-upload-area {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+
+.fp-upload-area:hover { border-color: var(--blue); background: var(--blue-bg); }
+.fp-upload-area input { display: none; }
+
+.fp-upload-text { font-size: 12px; color: var(--text3); font-weight: 500; }
+.fp-upload-sub  { font-size: 11px; color: var(--text4); margin-top: 2px; }
+
+.fp-loaded {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--green-bg);
+  border: 1px solid rgba(52,199,89,.3);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+}
+
+.fp-loaded-name { font-size: 12px; color: var(--green); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+
+.btn-icon {
+  width: 26px; height: 26px;
+  background: none; border: 1px solid var(--border2);
+  border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3); transition: all .15s; flex-shrink: 0;
+}
+
+.btn-icon:hover { background: var(--surface2); color: var(--text2); border-color: var(--border2); }
+.btn-icon svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Tool buttons */
+.map-tools { display: flex; flex-direction: column; gap: 5px; }
+
+.tool-btn {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 8px 10px;
+  border: 1.5px solid var(--border2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text2); font-size: 12.5px; font-weight: 500;
+  cursor: pointer; transition: all .15s; text-align: left;
+  font-family: 'Inter', sans-serif;
+}
+
+.tool-btn:hover { background: var(--surface2); border-color: var(--border2); }
+.tool-btn.active { background: var(--blue-bg2); border-color: rgba(0,113,227,.35); color: var(--blue); }
+.tool-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* Place hint */
+.place-hint {
+  margin: 0 14px 10px;
+  background: var(--blue-bg);
+  border: 1px solid rgba(0,113,227,.2);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  font-size: 11.5px; color: var(--blue); font-weight: 500;
+  display: none;
+}
+.place-hint.show { display: block; }
+
+/* Anchor chips */
+.anchor-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.anchor-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; font-weight: 500;
+  padding: 3px 9px; border-radius: 99px;
+  background: var(--blue-bg); border: 1px solid rgba(0,113,227,.2);
+  color: var(--blue);
+}
+
+/* Beacon list */
+.map-beacon-list { flex: 1; overflow-y: auto; }
+
+.map-beacon-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .12s;
+}
+
+.map-beacon-row:hover { background: var(--surface2); }
+.map-beacon-row.sel { background: var(--blue-bg); border-left: 2px solid var(--blue); padding-left: 12px; }
+
+.mbr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mbr-info { flex: 1; min-width: 0; }
+.mbr-tag { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 500; color: var(--text); }
+.mbr-meta { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.mbr-pin { font-size: 11px; color: var(--text4); white-space: nowrap; }
+.mbr-pin.pinned { color: var(--blue); }
+
+.map-no-data { padding: 24px; text-align: center; font-size: 12px; color: var(--text4); }
+
+/* Canvas area */
+.map-canvas-area {
+  flex: 1; position: relative;
+  background: var(--bg); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#fp-canvas { position: absolute; top: 0; left: 0; cursor: grab; }
+
+.canvas-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 8px; color: var(--text4);
+  pointer-events: none; text-align: center;
+}
+
+.canvas-empty-icon { font-size: 52px; opacity: .2; }
+.canvas-empty-title { font-size: 14px; font-weight: 500; color: var(--text3); }
+.canvas-empty-sub { font-size: 12px; }
+
+/* Beacon pin */
+.beacon-pin {
+  position: absolute; transform: translate(-50%,-50%);
+  cursor: pointer; z-index: 10;
+}
+
+.pin-outer {
+  position: absolute; inset: -6px; border-radius: 50%;
+  border: 2px solid currentColor; opacity: .2;
+}
+
+.pin-outer.pulse { animation: pinpulse 1.6s ease-in-out infinite; }
+@keyframes pinpulse { 0%,100%{transform:scale(1);opacity:.2;} 50%{transform:scale(1.7);opacity:.05;} }
+
+.pin-body {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: currentColor;
+  border: 3px solid white;
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+}
+
+.pin-text { font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700; color: white; }
+
+/* Pin tooltip */
+.pin-tooltip {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 10px 12px;
+  box-shadow: var(--shadow-lg); display: none; z-index: 20;
+  min-width: 170px; pointer-events: none;
+}
+
+.beacon-pin:hover .pin-tooltip { display: block; }
+
+.ptt-tag { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.ptt-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.ptt-row:last-child { border: none; }
+.ptt-k { color: var(--text3); }
+.ptt-v { font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+/* Map overlay controls */
+.map-overlay-ctrl {
+  position: absolute; bottom: 16px; right: 16px; z-index: 30;
+  display: flex; gap: 6px;
+}
+
+.zoom-group {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--r-sm); overflow: hidden;
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+}
+
+.zoom-btn {
+  width: 32px; height: 32px;
+  background: none; border: none; border-bottom: 1px solid var(--border);
+  color: var(--text2); font-size: 17px; font-weight: 400;
+  cursor: pointer; transition: background .12s;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.zoom-btn:last-child { border: none; }
+.zoom-btn:hover { background: var(--surface2); }
+
+.map-info-pill {
+  position: absolute; bottom: 16px; left: 16px; z-index: 30;
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 99px; padding: 5px 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3);
+  box-shadow: var(--shadow-sm);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div id="screen-login">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="login-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <div class="login-brand-name">Wall<span>Enc</span></div>
+    </div>
+
+    <div class="login-card">
+      <div class="login-title">Sign in</div>
+      <div class="login-sub">Access your beacon dashboard</div>
+
+      <div class="login-error" id="login-error">Incorrect email or password.</div>
+
+      <div class="form-field">
+        <label class="form-label">Email</label>
+        <div class="form-input-wrap">
+          <input class="form-input" type="email" id="inp-email" placeholder="you@company.com" autocomplete="email"/>
+          <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></span>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="form-label">Password</label>
+        <div class="form-input-wrap">
+          <input class="form-input" type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"/>
+          <button class="eye-toggle" type="button" onclick="togglePwd()" id="eye-btn">
+            <svg id="eye-svg" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-login" onclick="doLogin()">
+        <span id="btn-login-label">Sign In</span>
+      </button>
+
+      <div class="login-footer">Secure · WallEnc v2.0</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP ═══════════════ -->
+<div id="screen-app">
+  <div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          </div>
+          <div class="sidebar-brand-name">Wall<span>Enc</span></div>
+        </div>
+        <div class="sidebar-user">
+          <div class="user-avatar" id="user-av">--</div>
+          <div class="user-info">
+            <div class="user-display" id="user-name">—</div>
+            <div class="user-client" id="user-client">—</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-label">Monitor</div>
+          <button class="nav-item active" onclick="switchView('overview',this)">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Overview
+            <span class="nav-badge blue" id="nav-active-count">0</span>
+          </button>
+          <button class="nav-item" onclick="switchView('map',this)">
+            <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            Map View
+          </button>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-label">Alerts</div>
+          <button class="nav-item" onclick="switchView('alerts',this)">
+            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Alerts
+            <span class="nav-badge" id="nav-alert-count" style="display:none">0</span>
+          </button>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="fb-config">
+          <div class="fb-config-label">Firebase</div>
+          <input class="fb-input" type="text" id="fb-url" placeholder="https://project-rtdb.firebasedatabase.app"/>
+          <button class="btn-connect" onclick="startDashboard()">Connect</button>
+          <div class="conn-status">
+            <div class="conn-dot" id="conn-dot"></div>
+            <span id="conn-label">Not connected</span>
+          </div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title" id="topbar-title">Overview</div>
+        <div class="topbar-clock" id="topbar-clock">--:--:--</div>
+        <div class="topbar-pill idle" id="topbar-pill">
+          <div class="conn-dot" id="topbar-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;"></div>
+          <span id="topbar-status">Idle</span>
+        </div>
+      </div>
+
+      <!-- OVERVIEW -->
+      <div class="view active" id="view-overview">
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-card-icon blue">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-card-label">Active Beacons</div>
+            <div class="stat-card-value" id="s-active">0</div>
+            <div class="stat-card-note">seen in last 30s</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon green">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="stat-card-label">Total Tags</div>
+            <div class="stat-card-value" id="s-total">0</div>
+            <div class="stat-card-note">all detected</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon amber">
+              <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="stat-card-label">Motion</div>
+            <div class="stat-card-value" id="s-motion">0</div>
+            <div class="stat-card-note">currently active</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon red">
+              <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="stat-card-label">Tamper Alerts</div>
+            <div class="stat-card-value" id="s-tamper">0</div>
+            <div class="stat-card-note">requires attention</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon blue">
+              <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <div class="stat-card-label">Last Update</div>
+            <div class="stat-card-value" id="s-lastupdate" style="font-size:18px;margin-top:2px">—</div>
+            <div class="stat-card-note">most recent ping</div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title">BEACONS</div>
+        </div>
+
+        <div class="beacon-grid" id="beacon-grid">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-icon">📡</div>
+            <div class="empty-title">No beacons detected</div>
+            <div class="empty-sub">Enter your Firebase URL in the sidebar and click Connect</div>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top:8px;">
+          <div class="section-title">EVENT LOG</div>
+          <button class="btn-ghost" onclick="clearLog()">Clear</button>
+        </div>
+        <div class="log-card">
+          <div id="log-entries">
+            <div class="log-line info">[system] Ready — enter Firebase URL to connect</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP VIEW -->
+      <div class="view" id="view-map">
+        <div class="map-shell">
+          <!-- Map sidebar -->
+          <div class="map-side">
+            <div class="map-side-section">
+              <div class="map-side-section-title">Floor Plan</div>
+              <div id="fp-upload-area" class="fp-upload-area" onclick="document.getElementById('fp-file').click()">
+                <input type="file" id="fp-file" accept="image/*" onchange="loadFloorPlan(this)"/>
+                <div class="fp-upload-text">Upload floor plan</div>
+                <div class="fp-upload-sub">PNG, JPG up to 20MB</div>
+              </div>
+              <div id="fp-loaded" class="fp-loaded" style="display:none;margin-top:8px;">
+                <span class="fp-loaded-name" id="fp-loaded-name">floor.png</span>
+                <button class="btn-icon" onclick="clearFloorPlan()">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="map-side-section">
+              <div class="map-side-section-title">Tools</div>
+              <div class="map-tools">
+                <button class="tool-btn" id="btn-place" onclick="togglePlaceMode()">
+                  <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Place Beacons
+                </button>
+                <button class="tool-btn" onclick="clearPins()">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                  Clear All Pins
+                </button>
+                <button class="tool-btn" onclick="resetMapView()">
+                  <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Reset View
+                </button>
+              </div>
+            </div>
+
+            <div class="place-hint" id="place-hint">
+              Select a beacon below, then click the floor plan to place it
+            </div>
+
+            <div class="map-side-section" style="border-bottom:none;">
+              <div class="map-side-section-title">Anchors</div>
+              <div class="anchor-chips" id="anchor-chips">
+                <span class="anchor-chip">A1</span>
+              </div>
+            </div>
+
+            <div class="map-beacon-list" id="map-beacon-list">
+              <div class="map-no-data">Connect to Firebase first</div>
+            </div>
+          </div>
+
+          <!-- Canvas -->
+          <div class="map-canvas-area" id="canvas-wrap">
+            <canvas id="fp-canvas"></canvas>
+            <div class="canvas-empty" id="canvas-empty">
+              <div class="canvas-empty-icon">🗺</div>
+              <div class="canvas-empty-title">No floor plan uploaded</div>
+              <div class="canvas-empty-sub">Use the sidebar to upload your building layout</div>
+            </div>
+            <div class="map-overlay-ctrl">
+              <div class="zoom-group">
+                <button class="zoom-btn" onclick="doZoom(1.2)">+</button>
+                <button class="zoom-btn" onclick="doZoom(0.83)">−</button>
+              </div>
+            </div>
+            <div class="map-info-pill" id="map-info">No floor plan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTS VIEW (placeholder) -->
+      <div class="view" id="view-alerts">
+        <div style="padding:40px;text-align:center;color:var(--text3);">
+          <div style="font-size:40px;margin-bottom:12px;opacity:.3;">🔔</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text3);margin-bottom:4px;">Alerts Panel</div>
+          <div style="font-size:13px;color:var(--text4);">Motion and tamper alerts will appear here</div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /app-layout -->
+</div><!-- /screen-app -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// FIREBASE CONFIG
+// Replace with your actual Firebase config
+// ══════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDH11kTrAXkDvRZ9-qqOmjqw2YoHhWCfts",
+  authDomain: "beacon-tracker-40569.firebaseapp.com",
+  databaseURL: "https://beacon-tracker-40569-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "beacon-tracker-40569",
+  storageBucket: "beacon-tracker-40569.appspot.com",
+  messagingSenderId: "412181574739",
+  appId: "1:412181574739:web:8b381511d4348babe182a6"
+};
+
+// Init Firebase
+firebase.initializeApp(FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db   = firebase.database();
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let currentUser = null, clientId = '';
+let pollTimer = null, dbUrl = '';
+const beacons = {}, pins = {};
+const knownAnchors = new Set();
+let fpImg = null, scale = 1, offsetX = 0, offsetY = 0;
+let isDragging = false, dragSX = 0, dragSY = 0, dragOX = 0, dragOY = 0;
+let placeMode = false, selTag = null;
+
+// ══════════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════════
+setInterval(() => {
+  const el = document.getElementById('topbar-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString();
+}, 1000);
+
+// ══════════════════════════════════════════════════════
+// FIREBASE AUTH — Listen to auth state
+// ══════════════════════════════════════════════════════
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    onLoginSuccess(user);
+  } else {
+    showLogin();
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════
+function togglePwd() {
+  const inp = document.getElementById('inp-pass');
+  const svg = document.getElementById('eye-svg');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    inp.type = 'password';
+    svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+function doLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-login');
+  const lbl   = document.getElementById('btn-login-label');
+
+  if (!email || !pass) { showLoginErr('Please enter your email and password.'); return; }
+
+  errEl.classList.remove('show');
+  btn.disabled = true;
+  lbl.innerHTML = '<span class="spinner"></span>Signing in…';
+
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(result => { /* onAuthStateChanged handles the rest */ })
+    .catch(err => {
+      btn.disabled = false;
+      lbl.textContent = 'Sign In';
+      const msg = err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password'
+        ? 'Incorrect email or password.' : err.message;
+      showLoginErr(msg);
+    });
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+function showLogin() {
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('screen-app').style.display  = 'none';
+  const btn = document.getElementById('btn-login');
+  const lbl = document.getElementById('btn-login-label');
+  if (btn) { btn.disabled = false; lbl.textContent = 'Sign In'; }
+}
+
+function onLoginSuccess(user) {
+  // clientId = email prefix (e.g. "acme" from "acme@wallenc.com")
+  // In production, store clientId in Firebase user profile / custom claims
+  clientId = user.email.split('@')[0].replace(/[^a-z0-9_]/gi, '_');
+
+  const initials = user.displayName
+    ? user.displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
+    : user.email.slice(0,2).toUpperCase();
+
+  document.getElementById('user-av').textContent      = initials;
+  document.getElementById('user-name').textContent    = user.displayName || user.email.split('@')[0];
+  document.getElementById('user-client').textContent  = clientId;
+
+  // Restore saved Firebase URL
+  const savedUrl = localStorage.getItem('we_url_' + clientId);
+  if (savedUrl) document.getElementById('fb-url').value = savedUrl;
+
+  // Hide login → show app with fade
+  const ls = document.getElementById('screen-login');
+  ls.style.transition = 'opacity .4s ease';
+  ls.style.opacity = '0';
+  setTimeout(() => {
+    ls.style.display = 'none';
+    document.getElementById('screen-app').style.display = 'block';
+    resizeCanvas();
+    if (savedUrl) startDashboard();
+  }, 380);
+
+  log(`Signed in as ${user.email}`, 'ok');
+}
+
+function doLogout() {
+  if (pollTimer) clearInterval(pollTimer);
+  auth.signOut().then(() => {
+    currentUser = null;
+    // Reset state
+    Object.keys(beacons).forEach(k => delete beacons[k]);
+    document.getElementById('beacon-grid').innerHTML = '<div class="empty-state" id="empty-state"><div class="empty-icon">📡</div><div class="empty-title">No beacons detected</div><div class="empty-sub">Enter your Firebase URL in the sidebar and click Connect</div></div>';
+    document.getElementById('map-beacon-list').innerHTML = '<div class="map-no-data">Connect to Firebase first</div>';
+    setConn(false, true);
+    const ls = document.getElementById('screen-login');
+    ls.style.opacity = '0'; ls.style.display = 'flex';
+    setTimeout(() => { ls.style.transition = 'opacity .3s'; ls.style.opacity = '1'; }, 10);
+    document.getElementById('screen-app').style.display = 'none';
+  });
+}
+
+// Enter key
+document.getElementById('inp-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('inp-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('inp-pass').focus(); });
+
+// ══════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════
+const viewTitles = { overview: 'Overview', map: 'Map View', alerts: 'Alerts' };
+
+function switchView(name, btn) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('topbar-title').textContent = viewTitles[name] || name;
+  if (name === 'map') setTimeout(() => { resizeCanvas(); drawFloorPlan(); }, 80);
+}
+
+// ══════════════════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════════════════
+function log(msg, type = 'info') {
+  const wrap = document.getElementById('log-entries');
+  if (!wrap) return;
+  const d = document.createElement('div');
+  d.className = 'log-line ' + type;
+  d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  wrap.prepend(d);
+  while (wrap.children.length > 100) wrap.removeChild(wrap.lastChild);
+}
+function clearLog() { document.getElementById('log-entries').innerHTML = ''; }
+
+// ══════════════════════════════════════════════════════
+// CONNECT TO FIREBASE REST
+// ══════════════════════════════════════════════════════
+function startDashboard() {
+  dbUrl = document.getElementById('fb-url').value.trim().replace(/\/$/, '');
+  if (!dbUrl) { log('Please enter a Firebase URL', 'err'); return; }
+  localStorage.setItem('we_url_' + clientId, dbUrl);
+  log(`Connecting…`, 'info');
+  if (pollTimer) clearInterval(pollTimer);
+  poll();
+  pollTimer = setInterval(poll, 3000);
+}
+
+async function poll() {
+  if (!dbUrl || !clientId) return;
+  try {
+    const r = await fetch(`${dbUrl}/clients/${clientId}/beacons.json`);
+    if (!r.ok) { log(`HTTP ${r.status} — check Firebase rules`, 'err'); setConn(false); return; }
+    const data = await r.json();
+    setConn(true);
+    if (!data) return;
+    processData(data);
+  } catch (e) { log(`Network error: ${e.message}`, 'err'); setConn(false); }
+}
+
+function setConn(ok, idle = false) {
+  const dot   = document.getElementById('conn-dot');
+  const label = document.getElementById('conn-label');
+  const tpill = document.getElementById('topbar-pill');
+  const tdot  = document.getElementById('topbar-dot');
+  const ts    = document.getElementById('topbar-status');
+
+  if (idle) {
+    dot.className = 'conn-dot';
+    label.textContent = 'Not connected';
+    tpill.className = 'topbar-pill idle';
+    ts.textContent = 'Idle';
+    return;
+  }
+
+  dot.className   = 'conn-dot ' + (ok ? 'live' : 'err');
+  label.textContent = ok ? 'Live' : 'Error';
+  tpill.className = 'topbar-pill ' + (ok ? 'live' : 'err');
+  ts.textContent  = ok ? 'Live' : 'Error';
+}
+
+// ══════════════════════════════════════════════════════
+// PROCESS DATA
+// ══════════════════════════════════════════════════════
+function processData(data) {
+  const now = Date.now() / 1000;
+  let mo = 0, ta = 0, latest = 0, active = 0;
+
+  for (const [id, raw] of Object.entries(data)) {
+    const d = raw.live || raw;
+    const prev = beacons[id];
+    const isNew = !prev, changed = prev && JSON.stringify(prev) !== JSON.stringify(d);
+    beacons[id] = d;
+
+    const age = now - (d.timestamp_rx || 0);
+    if (age < 30) active++;
+    if (d.motion) mo++;
+    if (d.tamper) ta++;
+    if ((d.timestamp_rx || 0) > latest) latest = d.timestamp_rx;
+
+    if (isNew) log(`New beacon: ${id}`, 'ok');
+    if (changed && !isNew) log(`${id}  rssi=${d.rssi}  bat=${batPct(d.battery||0)}%`, 'info');
+
+    renderBeaconCard(id, d, changed || isNew);
+    renderMapRow(id, d);
+    updatePin(id);
+    addAnchorChip(d.anchor_id);
+  }
+
+  document.getElementById('s-active').textContent      = active;
+  document.getElementById('s-total').textContent       = Object.keys(beacons).length;
+  document.getElementById('s-motion').textContent      = mo;
+  document.getElementById('s-tamper').textContent      = ta;
+  document.getElementById('s-lastupdate').textContent  = latest ? new Date(latest * 1000).toLocaleTimeString() : '—';
+  document.getElementById('nav-active-count').textContent = active;
+
+  const ac = document.getElementById('nav-alert-count');
+  if (mo + ta > 0) { ac.textContent = mo + ta; ac.style.display = 'flex'; }
+  else { ac.style.display = 'none'; }
+
+  const em = document.getElementById('empty-state'); if (em) em.remove();
+}
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+const sigColor  = r => r > -60 ? 'var(--green)' : r > -80 ? 'var(--amber)' : 'var(--red)';
+const sigPct    = r => Math.max(0, Math.min(100, ((r + 100) / 60) * 100));
+const batPct    = b => Math.min(100, Math.round((b / 200) * 100));
+const batColor  = b => { const p = batPct(b); return p > 60 ? 'var(--green)' : p > 30 ? 'var(--amber)' : 'var(--red)'; };
+const ageStatus = ts => { const a = Date.now()/1000-(ts||0); return a<30?'online':a<120?'stale':'offline'; };
+const pinColor  = d => { const ta=d.tamper==1||d.tamper===true, mo=d.motion==1||d.motion===true, st=ageStatus(d.timestamp_rx); return ta?'#ff3b30':mo?'#ff9500':st==='online'?'#34c759':st==='stale'?'#ff9500':'#aeaeb2'; };
+
+// ══════════════════════════════════════════════════════
+// RENDER BEACON CARD
+// ══════════════════════════════════════════════════════
+function renderBeaconCard(id, d, flash) {
+  const grid = document.getElementById('beacon-grid');
+  let c = document.getElementById('bc-' + id);
+  if (!c) { c = document.createElement('div'); c.className = 'beacon-card'; c.id = 'bc-' + id; grid.appendChild(c); }
+
+  const mo = d.motion == 1 || d.motion === true;
+  const ta = d.tamper == 1 || d.tamper === true;
+  const st = ageStatus(d.timestamp_rx);
+  const ts = d.timestamp_rx ? new Date(d.timestamp_rx * 1000).toLocaleTimeString() : '—';
+  const sp = sigPct(d.rssi || 0), sc = sigColor(d.rssi || 0);
+  const bp = batPct(d.battery || 0), bc = batColor(d.battery || 0);
+
+  c.innerHTML = `
+    <div class="bc-head">
+      <div class="bc-left">
+        <div class="bc-avatar ${st}">${id.slice(-3)}</div>
+        <div>
+          <div class="bc-tag">${id}</div>
+          <div class="bc-anchor">${d.anchor_id || '—'} · ${d.product_id || '—'}</div>
+        </div>
+      </div>
+      <div class="status-dot ${st}"></div>
+    </div>
+    <div class="bc-signal">
+      <div class="bc-signal-row">
+        <span class="bc-signal-label">Signal strength</span>
+        <span class="bc-signal-val" style="color:${sc}">${d.rssi || '—'} dBm</span>
+      </div>
+      <div class="signal-track"><div class="signal-fill" style="width:${sp}%;background:${sc}"></div></div>
+    </div>
+    <div class="bc-metrics">
+      <div class="bc-metric">
+        <div class="bc-metric-label">Battery</div>
+        <div class="bc-metric-val" style="color:${bc}">${bp}%</div>
+      </div>
+      <div class="bc-metric">
+        <div class="bc-metric-label">Counter</div>
+        <div class="bc-metric-val">${d.counter !== undefined ? d.counter : '—'}</div>
+      </div>
+      <div class="bc-metric">
+        <div class="bc-metric-label">Status</div>
+        <div class="bc-metric-val" style="font-size:11px;color:${st==='online'?'var(--green)':st==='stale'?'var(--amber)':'var(--text4)'}">${st}</div>
+      </div>
+    </div>
+    <div class="bc-flags">
+      <span class="flag ${mo ? 'flag-motion' : 'flag-clear'}">motion ${mo ? 'active' : 'clear'}</span>
+      <span class="flag ${ta ? 'flag-tamper' : 'flag-clear'}">tamper ${ta ? 'alert' : 'clear'}</span>
+    </div>
+    <div class="bc-footer">
+      <span class="bc-mac">${d.mac || '—'}</span>
+      <span class="bc-ts">${ts}</span>
+    </div>`;
+
+  if (flash) { c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); }
+}
+
+// ══════════════════════════════════════════════════════
+// MAP ROW
+// ══════════════════════════════════════════════════════
+function renderMapRow(id, d) {
+  const list = document.getElementById('map-beacon-list');
+  const nd = list.querySelector('.map-no-data'); if (nd) nd.remove();
+  let row = document.getElementById('mr-' + id);
+  if (!row) {
+    row = document.createElement('div');
+    row.className = 'map-beacon-row';
+    row.id = 'mr-' + id;
+    row.onclick = () => selectBeacon(id);
+    list.appendChild(row);
+  }
+  const st = ageStatus(d.timestamp_rx);
+  const col = pinColor(d);
+  const pinned = !!pins[id];
+  row.innerHTML = `
+    <div class="mbr-dot" style="background:${col}"></div>
+    <div class="mbr-info">
+      <div class="mbr-tag">${id}</div>
+      <div class="mbr-meta">${d.rssi || '?'} dBm · bat ${batPct(d.battery||0)}%</div>
+    </div>
+    <div class="mbr-pin ${pinned ? 'pinned' : ''}">${pinned ? '📍' : '○'}</div>`;
+}
+
+function selectBeacon(id) {
+  selTag = id;
+  document.querySelectorAll('.map-beacon-row').forEach(r => r.classList.remove('sel'));
+  const el = document.getElementById('mr-' + id); if (el) el.classList.add('sel');
+  if (placeMode) document.getElementById('place-hint').textContent = `Click floor plan to place: ${id}`;
+  const pin = document.getElementById('pin-' + id);
+  if (pin) pin.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function addAnchorChip(id) {
+  if (!id || knownAnchors.has(id)) return;
+  knownAnchors.add(id);
+  const wrap = document.getElementById('anchor-chips');
+  const chip = document.createElement('span');
+  chip.className = 'anchor-chip'; chip.textContent = id;
+  wrap.appendChild(chip);
+}
+
+// ══════════════════════════════════════════════════════
+// FLOOR PLAN CANVAS
+// ══════════════════════════════════════════════════════
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const c = document.getElementById('fp-canvas');
+  c.width = wrap.clientWidth; c.height = wrap.clientHeight;
+}
+
+function drawFloorPlan() {
+  const c = document.getElementById('fp-canvas');
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  if (!fpImg) return;
+  ctx.save();
+  ctx.translate(offsetX, offsetY); ctx.scale(scale, scale);
+  ctx.drawImage(fpImg, 0, 0, fpImg.width, fpImg.height);
+  ctx.strokeStyle = 'rgba(0,113,227,0.05)'; ctx.lineWidth = 1 / scale;
+  for (let x = 0; x < fpImg.width; x += 50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,fpImg.height); ctx.stroke(); }
+  for (let y = 0; y < fpImg.height; y += 50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(fpImg.width,y); ctx.stroke(); }
+  ctx.restore();
+  document.getElementById('map-info').textContent = `${Math.round(scale*100)}% · ${fpImg.width}×${fpImg.height}px`;
+}
+
+function loadFloorPlan(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      fpImg = img; resizeCanvas();
+      const wrap = document.getElementById('canvas-wrap');
+      const s = Math.min(wrap.clientWidth / img.width, wrap.clientHeight / img.height) * 0.9;
+      scale = s;
+      offsetX = (wrap.clientWidth - img.width * s) / 2;
+      offsetY = (wrap.clientHeight - img.height * s) / 2;
+      drawFloorPlan();
+      document.getElementById('canvas-empty').style.display = 'none';
+      document.getElementById('fp-upload-area').style.display = 'none';
+      document.getElementById('fp-loaded').style.display = 'flex';
+      document.getElementById('fp-loaded-name').textContent = file.name;
+      document.getElementById('place-hint').classList.add('show');
+      log(`Floor plan loaded: ${file.name}`, 'ok');
+      Object.keys(pins).forEach(updatePin);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFloorPlan() {
+  fpImg = null;
+  const c = document.getElementById('fp-canvas');
+  c.getContext('2d').clearRect(0, 0, c.width, c.height);
+  document.getElementById('canvas-empty').style.display = 'flex';
+  document.getElementById('fp-upload-area').style.display = 'block';
+  document.getElementById('fp-loaded').style.display = 'none';
+  document.getElementById('fp-file').value = '';
+  document.getElementById('map-info').textContent = 'No floor plan';
+  log('Floor plan cleared', 'info');
+}
+
+function doZoom(f) {
+  const wrap = document.getElementById('canvas-wrap');
+  const cx = wrap.clientWidth / 2, cy = wrap.clientHeight / 2;
+  const ns = Math.min(8, Math.max(0.08, scale * f));
+  offsetX = cx - (cx - offsetX) * (ns / scale);
+  offsetY = cy - (cy - offsetY) * (ns / scale);
+  scale = ns; drawFloorPlan(); updateAllPins();
+}
+
+function resetMapView() {
+  if (!fpImg) return;
+  const wrap = document.getElementById('canvas-wrap');
+  const s = Math.min(wrap.clientWidth / fpImg.width, wrap.clientHeight / fpImg.height) * 0.9;
+  scale = s;
+  offsetX = (wrap.clientWidth - fpImg.width * s) / 2;
+  offsetY = (wrap.clientHeight - fpImg.height * s) / 2;
+  drawFloorPlan(); updateAllPins();
+}
+
+const i2s = (ix, iy) => ({ x: offsetX + ix * scale, y: offsetY + iy * scale });
+const s2i = (sx, sy) => ({ x: (sx - offsetX) / scale, y: (sy - offsetY) / scale });
+
+const cw = document.getElementById('canvas-wrap');
+
+cw.addEventListener('mousedown', e => {
+  if (placeMode && selTag && fpImg) {
+    const rect = cw.getBoundingClientRect();
+    const ic = s2i(e.clientX - rect.left, e.clientY - rect.top);
+    if (ic.x >= 0 && ic.x <= fpImg.width && ic.y >= 0 && ic.y <= fpImg.height) {
+      pins[selTag] = { ix: ic.x, iy: ic.y };
+      updatePin(selTag);
+      renderMapRow(selTag, beacons[selTag] || {});
+      log(`${selTag} placed on floor plan`, 'ok');
+      return;
+    }
+  }
+  isDragging = true; dragSX = e.clientX; dragSY = e.clientY; dragOX = offsetX; dragOY = offsetY;
+  cw.style.cursor = 'grabbing';
+});
+
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  offsetX = dragOX + (e.clientX - dragSX);
+  offsetY = dragOY + (e.clientY - dragSY);
+  drawFloorPlan(); updateAllPins();
+});
+
+window.addEventListener('mouseup', () => {
+  isDragging = false;
+  cw.style.cursor = placeMode ? 'crosshair' : 'grab';
+});
+
+cw.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = cw.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const f = e.deltaY < 0 ? 1.12 : 0.88;
+  const ns = Math.min(8, Math.max(0.08, scale * f));
+  offsetX = mx - (mx - offsetX) * (ns / scale);
+  offsetY = my - (my - offsetY) * (ns / scale);
+  scale = ns; drawFloorPlan(); updateAllPins();
+}, { passive: false });
+
+window.addEventListener('resize', () => { resizeCanvas(); drawFloorPlan(); updateAllPins(); });
+
+// ══════════════════════════════════════════════════════
+// PINS
+// ══════════════════════════════════════════════════════
+function updatePin(id) {
+  const d = beacons[id] || {}, p = pins[id];
+  if (!p) { const el = document.getElementById('pin-'+id); if (el) el.remove(); return; }
+  const sc2 = i2s(p.ix, p.iy);
+  const color = pinColor(d);
+  const mo = d.motion==1||d.motion===true, ta = d.tamper==1||d.tamper===true;
+  const st = ageStatus(d.timestamp_rx);
+  const ts = d.timestamp_rx ? new Date(d.timestamp_rx*1000).toLocaleTimeString() : '—';
+  const pulse = mo || ta;
+
+  let el = document.getElementById('pin-'+id);
+  if (!el) { el = document.createElement('div'); el.className = 'beacon-pin'; el.id = 'pin-'+id; el.onclick = () => selectBeacon(id); cw.appendChild(el); }
+
+  el.style.left = sc2.x + 'px'; el.style.top = sc2.y + 'px'; el.style.color = color;
+  el.innerHTML = `
+    <div class="pin-outer ${pulse ? 'pulse' : ''}"></div>
+    <div class="pin-body" style="background:${color}">
+      <span class="pin-text">${id.slice(-3)}</span>
+    </div>
+    <div class="pin-tooltip">
+      <div class="ptt-tag">${id}</div>
+      <div class="ptt-row"><span class="ptt-k">Signal</span><span class="ptt-v" style="color:${sigColor(d.rssi||0)}">${d.rssi||'—'} dBm</span></div>
+      <div class="ptt-row"><span class="ptt-k">Battery</span><span class="ptt-v">${batPct(d.battery||0)}%</span></div>
+      <div class="ptt-row"><span class="ptt-k">Motion</span><span class="ptt-v" style="color:${mo?'var(--amber)':'var(--green)'}">${mo?'Active':'Clear'}</span></div>
+      <div class="ptt-row"><span class="ptt-k">Tamper</span><span class="ptt-v" style="color:${ta?'var(--red)':'var(--green)'}">${ta?'Alert':'Clear'}</span></div>
+      <div class="ptt-row"><span class="ptt-k">Status</span><span class="ptt-v">${st}</span></div>
+      <div class="ptt-row"><span class="ptt-k">Last seen</span><span class="ptt-v">${ts}</span></div>
+    </div>`;
+}
+
+function updateAllPins() {
+  Object.keys(pins).forEach(id => {
+    const el = document.getElementById('pin-'+id), p = pins[id];
+    if (!el || !p) return;
+    const sc2 = i2s(p.ix, p.iy);
+    el.style.left = sc2.x + 'px'; el.style.top = sc2.y + 'px';
+  });
+}
+
+function clearPins() {
+  Object.keys(pins).forEach(id => { const el = document.getElementById('pin-'+id); if (el) el.remove(); delete pins[id]; });
+  Object.keys(beacons).forEach(id => renderMapRow(id, beacons[id]));
+  log('All pins cleared', 'info');
+}
+
+function togglePlaceMode() {
+  placeMode = !placeMode;
+  const btn = document.getElementById('btn-place');
+  const hint = document.getElementById('place-hint');
+  btn.classList.toggle('active', placeMode);
+  hint.classList.toggle('show', placeMode);
+  if (placeMode) {
+    hint.textContent = selTag ? `Click floor plan to place: ${selTag}` : 'Select a beacon from the list first';
+    cw.style.cursor = 'crosshair';
+  } else {
+    hint.textContent = 'Select a beacon below, then click the floor plan to place it';
+    cw.style.cursor = 'grab';
+  }
+}
+
+// Init
+window.onload = () => { resizeCanvas(); };
+</script>
+</body>
+</html>
