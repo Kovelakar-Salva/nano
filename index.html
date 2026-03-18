@@ -1260,21 +1260,28 @@ function showLogin() {
 }
 
 function onLoginSuccess(user) {
-  // clientId = email prefix (e.g. "acme" from "acme@wallenc.com")
-  // In production, store clientId in Firebase user profile / custom claims
-  clientId = user.email.split('@')[0].replace(/[^a-z0-9_]/gi, '_');
+  // Map email to correct Firebase clientId path
+  const CLIENT_MAP = {
+    'rtih@wallenc.com'  : 'test_client',
+    'test@live.com'     : 'test_client',
+    'demo@wallenc.com'  : 'demo_client',
+  };
+
+  const email = user.email.toLowerCase();
+  clientId = CLIENT_MAP[email] || email.split('@')[0].replace(/[^a-z0-9_]/gi, '_');
 
   const initials = user.displayName
     ? user.displayName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
-    : user.email.slice(0,2).toUpperCase();
+    : email.slice(0,2).toUpperCase();
 
   document.getElementById('user-av').textContent      = initials;
-  document.getElementById('user-name').textContent    = user.displayName || user.email.split('@')[0];
+  document.getElementById('user-name').textContent    = user.displayName || email.split('@')[0];
   document.getElementById('user-client').textContent  = clientId;
 
-  // Restore saved Firebase URL
-  const savedUrl = localStorage.getItem('we_url_' + clientId);
-  if (savedUrl) document.getElementById('fb-url').value = savedUrl;
+  // Auto set Firebase URL — no manual entry needed
+  const DB_URL = 'https://beacon-tracker-40569-default-rtdb.asia-southeast1.firebasedatabase.app';
+  document.getElementById('fb-url').value = DB_URL;
+  localStorage.setItem('we_url_' + clientId, DB_URL);
 
   // Hide login → show app with fade
   const ls = document.getElementById('screen-login');
@@ -1284,10 +1291,10 @@ function onLoginSuccess(user) {
     ls.style.display = 'none';
     document.getElementById('screen-app').style.display = 'block';
     resizeCanvas();
-    if (savedUrl) startDashboard();
+    startDashboard(); // always start, no condition
   }, 380);
 
-  log(`Signed in as ${user.email}`, 'ok');
+  log(`Signed in as ${email} → client: ${clientId}`, 'ok');
 }
 
 function doLogout() {
